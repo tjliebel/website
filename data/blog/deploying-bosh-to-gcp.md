@@ -4,10 +4,12 @@ Identify the need the reader has, scope of the blog ("when you are done you will
 
 ##  Creating a Service Account
 
-A service account is an account that can perform automation tasks on GCP. 
+First thing we need is a service account to do the GCP automation for us. Create a service account with the following roles: 
+* `Compute Engine` > `Computer Admin`
+* `Service Accounts` > `Service Account User` 
+* `Storage` > `Storage Admin`
 
-Navigate to `IAM & Admin > Service accounts`, or search for `Service accounts` and select the `IAM & admin` option.
-Create a new service account. Give it a name and description, ie. `bosh-terraform`. Give it the role `Service Accounts` > `Service Account User`. Give users admin/user privledges as you like for this account (at least yourself). And finally create and save a key as json to be used later. 
+Also, create and save a the service account key as json to be used later. 
 
 ## Getting Started with Terraform
 
@@ -151,7 +153,7 @@ Next is to tell Genesis what it has to work with to write an environment file fo
 ```
 $ cd bosh-deployments
 ```
-
+To get started, type `genesis new` and give the environment a name, ie `bosh-gcp`. This is our first BOSH, so `y` for is this a proto-BOSH.
 ```
 $ genesis new bosh-gcp
 Setting up new environment bosh-gcp...
@@ -163,9 +165,7 @@ Verifying availability...ok
 Is this a proto-BOSH director?
 [y|n] > y
 ```
-
-from `make info`
-
+The info needed to answer just about all of the questions below can be found from the `make` that we did on your local machine (you can do `make info` to get that information again). The first chunk of questions are regarding the networking for the BOSH director.  
 ```
 What static IP do you want to deploy this BOSH director on?
 > 10.0.0.3
@@ -175,13 +175,14 @@ What network should this BOSH director exist in (in CIDR notation)?
 
 What default gateway (IP address) should this BOSH director use?
 > 10.0.0.1
-
-What DNS servers should BOSH use? (leave value empty to end)
-1st value > 8.8.8.8
-2nd value > 8.8.4.4
-3rd value >
 ```
-
+This is the DNS resolver that GCP uses. More info can be found in the [GCP documentation](https://cloud.google.com/compute/docs/internal-dns#access_by_internal_DNS).
+```
+What DNS servers should BOSH use? (leave value empty to end)
+1st value > 169.254.169.254
+2nd value > 
+```
+This is where Genesis gets into the GCP specific questions, go ahead and choose item `4` here.  
 ```
 What IaaS will this BOSH director orchestrate?
   1) VMWare vSphere
@@ -191,18 +192,21 @@ What IaaS will this BOSH director orchestrate?
   5) OpenStack
   6) BOSH Warden
 
-Select choice > Google Cloud Platform
-
+Select choice > 4
+```
+If you did not make any changes to the `.tf` Terraform config, your answers should be the same as mine for everything except the Project-ID and the GCP credentials. The GCP creds are the service account credentials. These are the raw json contents of the `.json` key file.
+```
 What is your GCP project ID?
-> gcp-genesis-docs
-
+> your-gcp-project-id
 
 What are your GCP credentials (generally supplied as a JSON block)? (Enter <CTRL-D> to end)
 -------------------------------------------------------------------------------------------
 {
   ~~~ Service Account creds as raw JSON ~~~
 }
-
+```
+Genesis now wants the network, subnetwork, and availability zone for the director to operate on. 
+```
 What is your GCP network name?
 > genesis-bosh-network
 
@@ -211,12 +215,14 @@ What is your GCP subnetwork name?
 
 What availability zone do you want the BOSH VM to reside in?
 > us-east4-a
-
+```
+We do need to give the evironment at least one tag. ie `bosh`.
+```
 What tags would you like to be set on the BOSH VM? (leave value empty to end)
 1st value > bosh
 2nd value >
 ```
-
+If you have a desire to look at the environment file at this point, go ahead. Otherwise, the environment file is ready to go without any edits. We can let Genesis take the info we provided and provision the environment.
 ```
 Would you like to edit the environment file?
 [y|n] > n
@@ -228,5 +234,32 @@ To deploy, run this:
 
   genesis deploy 'bosh-gcp'
 ```
+With that, Genesis has generated passwords and X.509 certs that the BOSH director needs and we are ready to deploy our BOSH director. 
+```
+$ genesis deploy bosh-gcp
+```
+This will likely take some time as it needs to compile quite a few packages. 
 
-When asked, select the temporary vault that was just created. 
+## Preparing the BOSH Director for use
+The BOSH director is now deployed and running, but it needs a couple more things before we can use it to deploy something else. Those being an Ubuntu Xenial stemcell and a cloud config. Luckily, we have tools in the BOSH Genesis kit and Terraform makefile to make these things pretty easy for us.
+
+Let's start with logging into our new BOSH director. When the BOSH director finished deploying, Genesis outputed a few different command options that are now available to us. Including what we need to login: 
+```
+$ genesis do bosh-gcp -- login
+
+Using vault at http://127.0.0.1:8201.
+Verifying availability...ok
+
+Running login addon for bosh-gcp
+Logging you in as user 'admin'...
+Using environment 'https://10.0.0.3:25555'
+
+Email (): admin
+Password ():
+
+Successfully authenticated with UAA
+
+Succeeded
+```
+Now we can use Genesis's handy `upload-stemcells` option which is a convenient way to upload stemcells. I chose the latest stemcell that was available at the time. 
+
