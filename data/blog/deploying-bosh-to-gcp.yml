@@ -1,13 +1,33 @@
-# Deploying a BOSH to Google Cloud Platform using Genesis and Terraform 
+# vim:ft=markdown:tw=76
+title:     Deploying a BOSH to Google Cloud Platform Using Genesis and Terraform
+permalink: deploying-bosh-to-gcp
+format:    markdown
+featured:  yes
+dated:     1 Aug 2019
+author:    tjliebel
+
+#header:    francesco-gallaroti-72602.jpg
+#credit:
+#  text:    "Francesco Gallarotti (@gallarotti), via Unsplash"
+#  url:     https://unsplash.com/@gallarotti
+
+abstract: |
+  FIXME - MARKETING ABSTRACT NEEDED STILL
+--- |-
+FIXME - TEASER NEEDED STILL
+
+--- |-
+
 
 Do you have a Google Cloud Platform account? Do you wish things were more automated and just easier to manage? Want to do that using BOSH, but wish there was a simple way to deploy BOSH? Me too. So, let's do that. 
 
 When this is all said and done, you will have a working environment in GCP with a Bastion Host to access the network, a BOSH Director to manage all the deployments, and a secure Vault instance to manage all of the credentials and certificates for the deployment. 
 
-All you need is a fresh GCP project with a service account to perform the automation tasks for us. Create a service account with the following roles: 
-* `Compute Engine` > `Computer Admin`
-* `Service Accounts` > `Service Account User` 
-* `Storage` > `Storage Admin`
+To get started you need a fresh GCP project with a service account to perform the automation tasks for us. Create a service account with the following roles: 
+
+    * `Compute Engine` > `Computer Admin`
+    * `Service Accounts` > `Service Account User` 
+    * `Storage` > `Storage Admin`
 
 Also, create and save the service account key as json to be used later. 
 
