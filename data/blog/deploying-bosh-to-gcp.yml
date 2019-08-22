@@ -33,9 +33,9 @@ When we are done, you will have a working environment in GCP with a bastion host
 
 To get started you need a fresh GCP project with a service account to perform the automation tasks. Create a service account with the following roles: 
 
-    * `Compute Engine` > `Computer Admin`
-    * `Service Accounts` > `Service Account User` 
-    * `Storage` > `Storage Admin`
+  * `Compute Engine` > `Computer Admin`
+  * `Service Accounts` > `Service Account User` 
+  * `Storage` > `Storage Admin`
 
 Also, create and save the service account key as json to be used later. 
 
