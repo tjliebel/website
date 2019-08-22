@@ -1,0 +1,32 @@
+  <div class="hero">
+    <div>
+      <h1>GENESIS</h1>
+      <h2>Deploy Your Cloud.</h2>
+      <a class="button" href="/docs/getting-started/">Get Started</a>
+    </div>
+  </div>
+
+  <div class="band-x3">
+    <li>
+      <i></i>
+      <h2>Flexibility</h2>
+      <p>Genesis lets you tailor-fit the cloud to your environments.</p>
+    </li>
+    <li>
+      <i></i>
+      <h2>Cloud-Native</h2>
+      <p>Genesis grew up on The Cloud™ and knows how things work in this new world order.</p>
+    </li>
+    <li>
+      <i></i>
+      <h2>Automated</h2>
+      <p>Continuously monitor and deploy your Genesis deployments, to stay patched.</p>
+    </li>
+  </div>
+
+  <div class="cta">
+    <h2>Get <span>Started</span></h2>
+    <p>Genesis helps you build your cloud, leveraging our best practices for BOSH, credentials storage, Cloud Foundry, services, and more. It takes the guesswork out of deployments and upgrades, and gives you advanced automation workflows on top of that.</p>
+
+    <a class="button" href="/docs/getting-started/">Start Deploying</a>
+  </div>
