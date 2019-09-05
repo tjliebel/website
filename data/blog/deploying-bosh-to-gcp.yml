@@ -45,9 +45,9 @@ Terraform is a way to manage infrastructure on GCP. Terraform documentation and 
 
     $ git clone https://github.com/genesis-community/terraforms
 
-We will be working in the `lab/gcp` area, here you will find a sample config file that is ready to go, only needing a few inputs from you. So make a `gcp.tfvars` file in the gcp lab area.
+We will be working in the `controlplane/gcp` area, here you will find a sample config file that is ready to go, only needing a few inputs from you. So make a `gcp.tfvars` file in the gcp controlplane area.
 
-    $ cd terraforms/lab/gcp
+    $ cd terraforms/controlplane/gcp
     $ vim gcp.tfvars
 
 Here are the variables that you need to define and what the file should look like:
@@ -106,17 +106,15 @@ That output provides the answers to most of questions that Genesis will ask when
 
 ## Setting up the Bastion Host
 
-With the infrastructure laid out, we will now move to the bastion host. Access the bastion host using the `ssh` command printed after the deploy. 
+The bastion host is the access point to the rest of the network. We will go through the bastion host to access any of our deployments. Access the bastion host using the `ssh` command printed after the deploy. 
 First thing, setup your git config.
 
     $ git config --global user.name "Your Name"
     $ git config --global user.email "Your Email"
 
-This bastion host is currently a fresh ubuntu VM. As part of the Terraform config, we pushed over a script that will get us what  we need to stand up our proto-BOSH using Genesis.
+This bastion host was a fresh ubuntu VM. As part of the Terraform config, we ran a script that installed what we need to stand up our proto-BOSH using Genesis.
 
-    $ sudo jumpbox system
-
-The things being installed by this script include `bosh`,`cf`, and `genesis` as well as some other utilities such as [safe](https://github.com/starkandwayne/safe), [spruce](https://github.com/geofffranks/spruce), and [jq](https://github.com/stedolan/jq). 
+The things installed by this script include `bosh`,`cf`, and `genesis` as well as some other utilities such as [safe](https://github.com/starkandwayne/safe), [spruce](https://github.com/geofffranks/spruce), and [jq](https://github.com/stedolan/jq). 
 
 To see what is installed, you can run `jumpbox` with no arguments.
 
@@ -175,11 +173,11 @@ Genesis will check for the newest kit for bosh and initialize a `bosh-deployment
 
 Next is to tell Genesis what it has to work with to write an environment file for our BOSH director. The environment file defines the configuration of the network and cloud platform that we are deploying our BOSH director on. 
 
-To get started, move into the directory Genesis created and run `genesis new` with a name for the environment, ie `bosh-gcp`. This is our first BOSH, so `y` when asked if this is a proto-BOSH.
+To get started, move into the directory Genesis created and run `genesis new` with a name for the environment, ie `gcp-env`. This is our first BOSH, so `y` when asked if this is a proto-BOSH.
 
     $ cd bosh-deployments
-    $ genesis new bosh-gcp
-    Setting up new environment bosh-gcp...
+    $ genesis new gcp-env
+    Setting up new environment gcp-env...
     
     Using vault at http://127.0.0.1:8201.
     Verifying availability...ok
@@ -253,15 +251,15 @@ If you have a desire to look at the environment file at this point, go ahead. Ot
     [y|n] > n
      - auto-generating credentials (in secret/bosh/gcp/bosh)...
      - auto-generating certificates (in secret/bosh/gcp/bosh)...
-    New environment bosh-gcp provisioned!
+    New environment gcp-env provisioned!
     
     To deploy, run this:
     
-      genesis deploy 'bosh-gcp'
+      genesis deploy 'gcp-env'
 
 With that, Genesis has generated passwords and X.509 certs that the BOSH director needs, added them to the temporary vault and we are ready to deploy our BOSH director. 
 
-    $ genesis deploy bosh-gcp
+    $ genesis deploy gcp-env
 
 This will likely take some time as it needs to compile quite a few packages. 
 
@@ -270,12 +268,12 @@ The BOSH director is now deployed and running, but it needs a two things before 
 
 Let's start with logging into our new BOSH director. When the BOSH director finished deploying, Genesis printed a few different command options that are now available to us, including what we need to login. 
 
-    $ genesis do bosh-gcp -- login
+    $ genesis do gcp-env -- login
     
     Using vault at http://127.0.0.1:8201.
     Verifying availability...ok
     
-    Running login addon for bosh-gcp
+    Running login addon for gcp-env
     Logging you in as user 'admin'...
     Using environment 'https://10.0.0.3:25555'
     
@@ -290,12 +288,12 @@ Let's start with logging into our new BOSH director. When the BOSH director fini
 
 Now we can use Genesis' handy `upload-stemcells` option which is a convenient way to upload stemcells. I chose the latest stemcell that was available at the time. 
 
-    $ genesis do bosh-gcp -- upload-stemcells
+    $ genesis do gcp-env -- upload-stemcells
     
     Using vault at http://127.0.0.1:8201.
     Verifying availability...ok
     
-    Running upload-stemcells addon for bosh-gcp
+    Running upload-stemcells addon for gcp-env
     
     Select the release family for the google-kvm ubuntu-xenial stemcell you wish to upload:
       1) 456.x (2 minor versions available)
@@ -329,7 +327,7 @@ From your local machine, in the terraform directory:
 
 Paste that YAML into a file on the bastion host vm, ie `cloud-config.yml`. Upload that to the BOSH Director.
 
-    $ bosh -e bosh-gcp update-cloud-config cloud-config.yml
+    $ bosh -e gcp-env update-cloud-config cloud-config.yml
 
 This cloud config is pretty basic. It defines defaults for the network, vm types, disk, and availability zone. We also defined another network for the Vault that we will be deploying shortly. 
 
@@ -345,11 +343,11 @@ There is a Genesis kit for Vault that will do most of the heavy lifting for us. 
 The only question this Genesis kit will ask is if this is our Genesis Vault, which it is, so `y` when prompted.
 
     $ cd vault-deployments
-    $ genesis new vault-gcp
+    $ genesis new gcp-env
 
 You can try to deploy right now, but Genesis will complain about the AZs. Vault by default looks to be in 3 availability zones. In our case, one AZ is fine for this lab environment. It is worth noting that in prod Vault should be distributed across availability zones to prevent losing all the creds to your entire deployment from a single point of failure. 
 
-Open up the `vault-gcp.yml` and add these params:
+Open up the `gcp-env.yml` and add these params:
 
     params:
       availability_zones: [z1]
@@ -359,18 +357,18 @@ We also add the `stemcell_os` param because the Vault kit might be expecting dif
 
 Now we are ready to deploy. This will also take some time, but slightly less than the proto-BOSH. 
 
-    $ genesis deploy bosh-gcp
+    $ genesis deploy gcp-env
 
 
 ## Transferring Secrets to the new Vault
 
 We now have a full-fledged Vault instance deployed and ready to go.  Initialize the new Vault.
 
-    $ genesis do vault-gcp -- init
+    $ genesis do gcp-env -- init
 
 Export all the creds from the local `temp-vault` to this new Vault.
 
-    $ safe -T temp-vault export | safe -T bosh-gcp import
+    $ safe -T temp-vault export | safe -T gcp-env import
 
 
 ## Showing Genesis the new Vault
@@ -389,23 +387,23 @@ Run `genesis secrets-provider` to see what Genesis is currently using.
 
 As Expected, Genesis is looking to the temp-vault still. We can go ahead and swap that over now.
 
-    $ genesis secrets-provider bosh-gcp
+    $ genesis secrets-provider gcp-env
     
     Secrets provider for vault deployment at /home/bastion-user/deployments/vault-deployments:
              Type: Safe/V
               URL: https://10.0.0.5 (noverify)
-      Local Alias: bosh-gcp
+      Local Alias: gcp-env
            Status: ok
 
 As stated above, this is per deployment. So we have to do the same in the bosh deployment.
 
     $ cd ~/deployments/bosh-deployments
-    $ genesis secrets-provider bosh-gcp
+    $ genesis secrets-provider gcp-env
     
     Secrets provider for bosh deployment at /home/bastion-user/deployments/bosh-deployments:
              Type: Safe/Vault
               URL: https://10.0.0.5 (noverify)
-      Local Alias: bosh-gcp
+      Local Alias: gcp-env
            Status: ok
 
 With all of our secrets _safely_ transferred, we can shut down the temp-vault. 
